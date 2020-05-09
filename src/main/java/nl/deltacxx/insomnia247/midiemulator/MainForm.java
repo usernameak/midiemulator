@@ -43,13 +43,22 @@ public class MainForm extends JFrame implements KeyListener {
             KeyEvent.VK_6, //
             KeyEvent.VK_Y,
             KeyEvent.VK_7, //
-            KeyEvent.VK_U
+            KeyEvent.VK_U,
+            // melody second octave
+            KeyEvent.VK_I,
+            KeyEvent.VK_9,//
+            KeyEvent.VK_O,
+            KeyEvent.VK_0,//
+            KeyEvent.VK_P,
+            KeyEvent.VK_OPEN_BRACKET,
+            KeyEvent.VK_EQUALS, //
+            KeyEvent.VK_CLOSE_BRACKET,
     };
 
     private static final Map<Integer, Integer> reverseKeymap;
     private JSpinner octaveSelector;
 
-    private int[] pressedNotes = new int[24];
+    private int[] pressedNotes = new int[32];
 
     private MidiDeviceEntry selectedMidiDevice;
 
@@ -110,6 +119,8 @@ public class MainForm extends JFrame implements KeyListener {
 
     public MainForm() {
         super();
+
+        setTitle("MidiEmulator");
 
         initMidi();
 

@@ -11,7 +11,7 @@ public class PianoWidget extends JComponent {
     public PianoWidget(int[] pressedNotes) {
         super();
         this.pressedNotes = pressedNotes;
-        setPreferredSize(new Dimension(14 * 32, 128));
+        setPreferredSize(new Dimension(19 * 32, 128));
         setFocusable(true);
 
         addMouseListener(new MouseAdapter() {
@@ -32,7 +32,7 @@ public class PianoWidget extends JComponent {
         g.setColor(Color.white);
         g.fillRect(0, 0, getWidth(), getHeight());
 
-        for(int i = 0; i < 24; i++) {
+        for(int i = 0; i < 32; i++) {
             if(pressedNotes[i] != -1 && keyOrdinals[i % 12] >= 0) {
                 int x = keyOrdinals[i % 12] + i / 12 * 7;
                 g.setColor(Color.red);
@@ -40,7 +40,7 @@ public class PianoWidget extends JComponent {
             }
         }
 
-        for(int i = 0; i < 14; i++) {
+        for(int i = 0; i < 19; i++) {
             g.setColor(Color.black);
             g.drawLine(i * 32, 0, i * 32, getHeight());
 
@@ -49,7 +49,7 @@ public class PianoWidget extends JComponent {
             }
         }
 
-        for(int i = 0; i < 24; i++) {
+        for(int i = 0; i < 32; i++) {
             if(pressedNotes[i] != -1 && keyOrdinals[i % 12] < 0) {
                 int ord = -keyOrdinals[i % 12];
                 int x = ord + i / 12 * 7;
