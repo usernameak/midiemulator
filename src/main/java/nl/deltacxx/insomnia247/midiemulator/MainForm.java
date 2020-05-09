@@ -55,19 +55,35 @@ public class MainForm extends JFrame implements KeyListener {
             KeyEvent.VK_CLOSE_BRACKET,
     };
 
+    private static final int[] channelKeymap = new int[] {
+            KeyEvent.VK_NUMPAD1,
+            KeyEvent.VK_NUMPAD2,
+            KeyEvent.VK_NUMPAD3,
+            KeyEvent.VK_NUMPAD4,
+            KeyEvent.VK_NUMPAD5,
+            KeyEvent.VK_NUMPAD6,
+    };
+
     private static final Map<Integer, Integer> reverseKeymap;
+    private static final Map<Integer, Integer> reverseChannelKeymap;
+    private final JLabel currentChannelLabel;
     private JSpinner octaveSelector;
 
     private int[] pressedNotes = new int[32];
 
     private MidiDeviceEntry selectedMidiDevice;
 
-    static {
+    private static Map<Integer, Integer> buildReverseKeymap(int[] keymap) {
         Map<Integer, Integer> reverseKeymap_ = new HashMap<>();
         for (int i = 0; i < keymap.length; i++) {
             reverseKeymap_.put(keymap[i], i);
         }
-        reverseKeymap = Collections.unmodifiableMap(reverseKeymap_);
+        return Collections.unmodifiableMap(reverseKeymap_);
+    }
+
+    static {
+        reverseKeymap = buildReverseKeymap(keymap);
+        reverseChannelKeymap = buildReverseKeymap(channelKeymap);
     }
 
     {
@@ -83,6 +99,8 @@ public class MainForm extends JFrame implements KeyListener {
     private PianoWidget pianoWidget;
     private JComboBox<MidiDeviceEntry> deviceSelector;
     private List<MidiDeviceEntry> midiDeviceList = new ArrayList<>();
+
+    private int currentChannel = 0;
 
     private void initMidi() {
         if (selectedMidiDevice != null) {
@@ -115,6 +133,11 @@ public class MainForm extends JFrame implements KeyListener {
             PortmidiLibrary.INSTANCE.Pm_Close(device.getStream());
             device.setStream(null);
         }
+    }
+
+    private void setCurrentChannel(int channel) {
+        this.currentChannel = channel;
+        this.currentChannelLabel.setText("Channel: " + (channel + 1));
     }
 
     public MainForm() {
@@ -166,7 +189,10 @@ public class MainForm extends JFrame implements KeyListener {
         });
         contentPane.add(deviceSelector, "wrap,grow,span 2");
         octaveSelector = new JSpinner(new SpinnerNumberModel(3, -2, 8, 1));
-        contentPane.add(octaveSelector, "wrap,grow");
+        contentPane.add(octaveSelector, "grow");
+        currentChannelLabel = new JLabel("Channel: ???");
+        setCurrentChannel(0);
+        contentPane.add(currentChannelLabel, "wrap,grow");
         contentPane.add(pianoWidget = new PianoWidget(pressedNotes), "span 2");
         setContentPane(contentPane);
 
@@ -192,20 +218,25 @@ public class MainForm extends JFrame implements KeyListener {
 
     private void noteOn(int note) {
         PortmidiLibrary.PmEvent event = new PortmidiLibrary.PmEvent();
-        event.message = buildMidiMessage(0b10010000, note, 100);
+        event.message = buildMidiMessage(0b10010000 | currentChannel, note, 100);
         event.timestamp = (int) System.currentTimeMillis();
         PortmidiLibrary.INSTANCE.Pm_Write(selectedMidiDevice.getStream(), event, 1);
     }
 
     private void noteOff(int note) {
         PortmidiLibrary.PmEvent event = new PortmidiLibrary.PmEvent();
-        event.message = buildMidiMessage(0b10000000, note, 100);
+        event.message = buildMidiMessage(0b10000000 | currentChannel, note, 100);
         event.timestamp = (int) System.currentTimeMillis();
         PortmidiLibrary.INSTANCE.Pm_Write(selectedMidiDevice.getStream(), event, 1);
     }
 
     @Override
     public void keyPressed(KeyEvent keyEvent) {
+        Integer channel = reverseChannelKeymap.get(keyEvent.getKeyCode());
+        if(channel != null) {
+            setCurrentChannel(channel);
+        }
+
         Integer note = reverseKeymap.get(keyEvent.getKeyCode());
         if (note != null) {
             int midiNote = note + (((int) octaveSelector.getValue()) + 2 - 1) * 12;
@@ -214,7 +245,7 @@ public class MainForm extends JFrame implements KeyListener {
             }
             if(pressedNotes[note] == -1) {
                 PortmidiLibrary.PmEvent event = new PortmidiLibrary.PmEvent();
-                event.message = buildMidiMessage(0b10010000, midiNote, 100);
+                event.message = buildMidiMessage(0b10010000 | currentChannel, midiNote, 100);
                 event.timestamp = (int) System.currentTimeMillis();
                 PortmidiLibrary.INSTANCE.Pm_Write(selectedMidiDevice.getStream(), event, 1);
                 pressedNotes[note] = midiNote;
